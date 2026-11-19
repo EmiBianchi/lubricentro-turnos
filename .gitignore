@@ -1,0 +1,17 @@
+# Entornos virtuales de Python
+venv/
+.venv/
+
+# Archivos de configuración con contraseñas (NUNCA se suben)
+.env
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datos de la base de datos de Docker
+docker/postgres/data/
+
+# Configuración local de VS Code
+.vscode/
