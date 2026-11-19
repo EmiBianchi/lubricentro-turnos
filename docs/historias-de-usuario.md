@@ -7,13 +7,14 @@ Cada historia y cada tarea técnica se carga como un issue en GitHub.
 
 ## Plan de sprints
 
-| Sprint   | Objetivo                                         |
-|----------|--------------------------------------------------|
-| Sprint 0 | Preparación: análisis, diseño y entorno          |
-| Sprint 1 | Microservicio ms-usuarios                        |
-| Sprint 2 | Microservicio ms-vehiculos                       |
-| Sprint 3 | Microservicio ms-turnos                          |
-| Sprint 4 | Integración, documentación y entrega             |
+| Sprint   | Objetivo                                              | Inicio     | Fin        |
+|----------|-------------------------------------------------------|------------|------------|
+| Sprint 0 | Preparación: tablero, diagrama de clases y base datos | 19/11/2026 | 20/11/2026 |
+| Sprint 1 | Microservicio ms-usuarios                             | 20/11/2026 | 20/11/2026 |
+| Sprint 2 | Microservicio ms-vehiculos                            | 21/11/2026 | 21/11/2026 |
+| Sprint 3 | Microservicio ms-turnos                               | 22/11/2026 | 22/11/2026 |
+| Sprint 4 | Integración y documentación                           | 23/11/2026 | 23/11/2026 |
+| Sprint 5 | Ajustes según devolución y entrega                    | 24/11/2026 | 25/11/2026 |
 
 ## Historias de usuario
 
@@ -46,3 +47,4 @@ Cada historia y cada tarea técnica se carga como un issue en GitHub.
 | TT-06 | Integración con docker-compose | Levantar los 3 microservicios y la base con un solo comando. | Alta | Alto | 4 | Todo |
 | TT-07 | Diagramas de secuencia | Diagramar en PlantUML el flujo de reserva de turno entre microservicios. | Media | Medio | 4 | Todo |
 | TT-08 | Documentación final | Completar el README con instrucciones de instalación, ejecución y pruebas. | Alta | Medio | 4 | Todo |
+| TT-09 | Ajustes según devolución | Aplicar las correcciones indicadas por el profesor en la revisión de avances. | Alta | Medio | 5 | Todo |
