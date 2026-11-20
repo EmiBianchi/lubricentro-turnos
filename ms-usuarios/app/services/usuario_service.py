@@ -1,5 +1,5 @@
 from app.models import ROL_CLIENTE, Rol, Usuario
-from app.services.excepciones import EmailYaRegistrado
+from app.services.excepciones import EmailYaRegistrado, UsuarioNoEncontrado
 from app.services.security import Encriptador
 
 ROLES_INICIALES = (ROL_CLIENTE,)
@@ -38,6 +38,15 @@ class UsuarioService:
             rol=self._rol_repo.buscar_por_nombre(ROL_CLIENTE),
         )
         return self._usuario_repo.guardar(usuario)
+
+    def obtener(self, id: int) -> Usuario:
+        """:return: el usuario con ese id.
+        :raises UsuarioNoEncontrado: si no existe (por ejemplo, token de un usuario borrado).
+        """
+        usuario = self._usuario_repo.buscar_por_id(id)
+        if usuario is None:
+            raise UsuarioNoEncontrado(id)
+        return usuario
 
     def crear_roles_iniciales(self) -> None:
         """Crea los roles que falten. Es idempotente: puede ejecutarse en cada arranque."""

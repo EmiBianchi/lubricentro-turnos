@@ -15,3 +15,9 @@ class CredencialesInvalidas(ErrorDeNegocio):
         # Mismo mensaje para email inexistente y contraseña incorrecta: no se
         # revela a un atacante qué emails están registrados.
         super().__init__("Email o contraseña incorrectos.")
+
+
+class UsuarioNoEncontrado(ErrorDeNegocio):
+
+    def __init__(self, id: int):
+        super().__init__(f"No existe el usuario {id}.")
