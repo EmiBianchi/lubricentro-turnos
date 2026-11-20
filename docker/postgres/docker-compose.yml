@@ -1,0 +1,36 @@
+# Servidor PostgreSQL compartido por los tres microservicios.
+# Cada microservicio usa su propia base de datos dentro de este servidor
+# (ver init/01-crear-bases.sql): se mantiene la independencia de datos
+# sin administrar tres contenedores de base de datos (KISS).
+services:
+  postgres:
+    image: postgres:16.2-bullseye
+    container_name: postgresql_servidor
+    ports:
+      # Formato puerto_host:puerto_contenedor. Si el puerto 5432 de la
+      # computadora ya está ocupado, se cambia POSTGRES_PORT en el .env.
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      # Credenciales leídas del .env: no quedan escritas en el código (12-Factor).
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      # Persistencia: los datos sobreviven a "docker compose down".
+      - ./data:/var/lib/postgresql/data
+      # PostgreSQL ejecuta estos scripts solo la primera vez, con la carpeta data vacía.
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      # Permite que los microservicios esperen a que la base acepte conexiones
+      # antes de arrancar (se usa en TT-06 con depends_on).
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lubricentro_red
+
+networks:
+  # Red virtual compartida: los microservicios se conectarán a ella para
+  # encontrar al servidor por su nombre (postgresql_servidor).
+  lubricentro_red:
+    name: lubricentro_red
