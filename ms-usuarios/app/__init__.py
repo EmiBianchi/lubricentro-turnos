@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -12,6 +13,7 @@ from app.config import factory
 db = SQLAlchemy()
 migrate = Migrate()
 ma = Marshmallow()
+jwt = JWTManager()
 
 
 def create_app(entorno: str | None = None) -> Flask:
@@ -28,6 +30,7 @@ def create_app(entorno: str | None = None) -> Flask:
     db.init_app(app)
     migrate.init_app(app, db)
     ma.init_app(app)
+    jwt.init_app(app)
 
     # Imports diferidos: models y resources importan db y ma desde este módulo,
     # por eso se cargan después de crearlos. Importar models explícitamente
