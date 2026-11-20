@@ -53,3 +53,7 @@ class CasoBase(unittest.TestCase):
         """
         token = self.iniciar_sesion(email, password).get_json()["access_token"]
         return {"Authorization": f"Bearer {token}"}
+
+    def crear_admin(self, email: str = "admin@lubricentro.com", password: str = "admin123"):
+        """Crea el administrador por el mismo camino que usa el arranque del sistema."""
+        crear_usuario_service().crear_admin_inicial("Administrador", email, password)
