@@ -1,0 +1,173 @@
+@startuml clases_ms_turnos
+!pragma layout smetana
+title ms-turnos - Diagrama de clases
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "models" {
+  abstract class AuditMixin {
+    + created_at: datetime
+    + updated_at: datetime
+  }
+
+  abstract class SoftDeleteMixin {
+    + deleted_at: datetime
+  }
+
+  class Turno {
+    + id: int
+    + fecha: date
+    + hora_inicio: time
+    + hora_fin: time
+    + box: int
+    + usuario_id: int
+    + vehiculo_id: int
+    + patente: str
+    + tipo_vehiculo: str
+  }
+
+  class Ocupacion {
+    + id: int
+    + fecha: date
+    + hora: time
+    + box: int
+    + turno_id: int
+  }
+}
+
+package "repository" {
+  abstract class RepositorioLectura {
+    # modelo: type
+    + buscar_por_id(id: int): object
+    + listar(): list
+  }
+
+  abstract class RepositorioEscritura {
+    # modelo: type
+    + guardar(entidad: object): object
+  }
+
+  abstract class RepositorioBorrado {
+    # modelo: type
+    + eliminar(entidad: object): None
+  }
+
+  class TurnoRepository {
+    + listar_por_usuario(usuario_id: int): list[Turno]
+    + listar_por_fecha(fecha: date): list[Turno]
+  }
+
+  class OcupacionRepository {
+    + listar_por_fecha(fecha: date): list[Ocupacion]
+  }
+}
+
+package "services" {
+  enum Franja {
+    MANANA
+    TARDE
+  }
+
+  class GrillaHoraria {
+    + cantidad_boxes: int = 2
+    + duracion_minutos: int = 30
+    + es_dia_habil(fecha: date): bool
+    + horarios_del_dia(fecha: date): list[time]
+    + horarios_de_franja(franja: Franja): list[time]
+    + franja_de(hora: time): Franja
+  }
+
+  abstract class ReglaReserva {
+    + {abstract} validar(hora: time, grilla: GrillaHoraria): None
+    + {abstract} horarios_a_ocupar(hora: time, grilla: GrillaHoraria): list[time]
+  }
+
+  class ReglaTurnoComun {
+    + validar(hora: time, grilla: GrillaHoraria): None
+    + horarios_a_ocupar(hora: time, grilla: GrillaHoraria): list[time]
+  }
+
+  class ReglaTurnoCamion {
+    + validar(hora: time, grilla: GrillaHoraria): None
+    + horarios_a_ocupar(hora: time, grilla: GrillaHoraria): list[time]
+  }
+
+  class FabricaReglas {
+    + crear(tipo_vehiculo: str): ReglaReserva
+  }
+
+  abstract class ClienteVehiculos {
+    + {abstract} obtener_vehiculo(vehiculo_id: int, token: str): dict
+  }
+
+  class ClienteVehiculosHTTP {
+    - url_base: str
+    + obtener_vehiculo(vehiculo_id: int, token: str): dict
+  }
+
+  class Reloj {
+    + ahora(): datetime
+  }
+
+  class TurnoService {
+    - turno_repo: TurnoRepository
+    - ocupacion_repo: OcupacionRepository
+    - cliente_vehiculos: ClienteVehiculos
+    - grilla: GrillaHoraria
+    - fabrica_reglas: FabricaReglas
+    - reloj: Reloj
+    + consultar_disponibilidad(fecha: date): list[dict]
+    + reservar(usuario_id: int, vehiculo_id: int, fecha: date, hora: time, token: str): Turno
+    + listar_de_usuario(usuario_id: int): list[Turno]
+    + cancelar(turno_id: int, usuario_id: int): None
+    + agenda_del_dia(fecha: date): list[Turno]
+  }
+}
+
+AuditMixin <|-- Turno
+SoftDeleteMixin <|-- Turno
+Turno "1" *-- "1..*" Ocupacion : ocupaciones
+
+RepositorioLectura <|-- TurnoRepository
+RepositorioEscritura <|-- TurnoRepository
+RepositorioBorrado <|-- TurnoRepository
+
+ReglaReserva <|-- ReglaTurnoComun
+ReglaReserva <|-- ReglaTurnoCamion
+FabricaReglas ..> ReglaReserva : crea
+GrillaHoraria --> Franja
+
+ClienteVehiculos <|-- ClienteVehiculosHTTP
+
+TurnoService --> TurnoRepository
+TurnoService --> OcupacionRepository
+TurnoService --> ClienteVehiculos
+TurnoService --> GrillaHoraria
+TurnoService --> FabricaReglas
+TurnoService --> Reloj
+
+note right of Ocupacion
+  Restricción única (fecha, hora, box).
+  Un turno común genera 1 ocupación; un camión
+  genera una por cada horario de la franja.
+  Si dos reservas simultáneas apuntan al mismo
+  casillero, la base rechaza la segunda (concurrencia).
+end note
+
+note bottom of ReglaReserva
+  OCP / LSP: TurnoService trabaja con cualquier
+  ReglaReserva. Un nuevo tipo de vehículo con otra
+  regla es una subclase nueva, sin modificar el servicio.
+end note
+
+note right of ClienteVehiculos
+  DIP: TurnoService depende de la abstracción.
+  En los tests se reemplaza por un cliente falso
+  y no hace falta levantar ms-vehiculos.
+end note
+
+note left of Reloj
+  Permite fijar "ahora" en los tests para
+  probar la regla de fechas pasadas.
+end note
+@enduml

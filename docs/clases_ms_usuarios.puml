@@ -1,0 +1,103 @@
+@startuml clases_ms_usuarios
+!pragma layout smetana
+title ms-usuarios - Diagrama de clases
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "models" {
+  abstract class AuditMixin {
+    + created_at: datetime
+    + updated_at: datetime
+  }
+
+  class Rol {
+    + id: int
+    + nombre: str
+  }
+
+  class Usuario {
+    + id: int
+    + nombre: str
+    + email: str
+    + password: str
+    + rol_id: int
+  }
+}
+
+package "repository" {
+  abstract class RepositorioLectura {
+    # modelo: type
+    + buscar_por_id(id: int): object
+    + listar(): list
+  }
+
+  abstract class RepositorioEscritura {
+    # modelo: type
+    + guardar(entidad: object): object
+  }
+
+  class RolRepository {
+    + buscar_por_nombre(nombre: str): Rol
+  }
+
+  class UsuarioRepository {
+    + buscar_por_email(email: str): Usuario
+  }
+}
+
+package "security" {
+  abstract class Encriptador {
+    + {abstract} generar_hash(password: str): str
+    + {abstract} verificar(password: str, hash: str): bool
+  }
+
+  class EncriptadorWerkzeug {
+    + generar_hash(password: str): str
+    + verificar(password: str, hash: str): bool
+  }
+}
+
+package "services" {
+  class UsuarioService {
+    - usuario_repo: UsuarioRepository
+    - rol_repo: RolRepository
+    - encriptador: Encriptador
+    + registrar(nombre: str, email: str, password: str): Usuario
+    + obtener(id: int): Usuario
+    + crear_roles_iniciales(): None
+    + crear_admin_inicial(nombre: str, email: str, password: str): None
+  }
+
+  class AuthService {
+    - usuario_repo: UsuarioRepository
+    - encriptador: Encriptador
+    + iniciar_sesion(email: str, password: str): str
+  }
+}
+
+AuditMixin <|-- Usuario
+Usuario "*" --> "1" Rol : rol
+
+RepositorioLectura <|-- RolRepository
+RepositorioEscritura <|-- RolRepository
+RepositorioLectura <|-- UsuarioRepository
+RepositorioEscritura <|-- UsuarioRepository
+
+Encriptador <|-- EncriptadorWerkzeug
+
+UsuarioService --> UsuarioRepository
+UsuarioService --> RolRepository
+UsuarioService --> Encriptador
+AuthService --> UsuarioRepository
+AuthService --> Encriptador
+
+note right of Encriptador
+  OCP / LSP: cambiar el algoritmo de cifrado
+  implica agregar otra subclase, sin modificar los servicios.
+end note
+
+note bottom of UsuarioService
+  DIP: recibe repositorios y encriptador
+  por constructor (inyección de dependencias).
+end note
+@enduml

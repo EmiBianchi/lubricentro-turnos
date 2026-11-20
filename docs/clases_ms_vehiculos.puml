@@ -1,0 +1,89 @@
+@startuml clases_ms_vehiculos
+!pragma layout smetana
+title ms-vehiculos - Diagrama de clases
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "models" {
+  abstract class AuditMixin {
+    + created_at: datetime
+    + updated_at: datetime
+  }
+
+  abstract class SoftDeleteMixin {
+    + deleted_at: datetime
+  }
+
+  enum TipoVehiculo {
+    MOTO
+    AUTO
+    CAMIONETA
+    CAMION
+  }
+
+  class Vehiculo {
+    + id: int
+    + patente: str
+    + tipo: TipoVehiculo
+    + marca: str
+    + modelo: str
+    + anio: int
+    + usuario_id: int
+  }
+}
+
+package "repository" {
+  abstract class RepositorioLectura {
+    # modelo: type
+    + buscar_por_id(id: int): object
+    + listar(): list
+  }
+
+  abstract class RepositorioEscritura {
+    # modelo: type
+    + guardar(entidad: object): object
+  }
+
+  abstract class RepositorioBorrado {
+    # modelo: type
+    + eliminar(entidad: object): None
+  }
+
+  class VehiculoRepository {
+    + buscar_por_patente(patente: str): Vehiculo
+    + listar_por_usuario(usuario_id: int): list[Vehiculo]
+  }
+}
+
+package "services" {
+  class VehiculoService {
+    - vehiculo_repo: VehiculoRepository
+    + registrar(usuario_id: int, datos: dict): Vehiculo
+    + listar_de_usuario(usuario_id: int): list[Vehiculo]
+    + obtener_de_usuario(id: int, usuario_id: int): Vehiculo
+    + modificar(id: int, usuario_id: int, datos: dict): Vehiculo
+    + dar_de_baja(id: int, usuario_id: int): None
+  }
+}
+
+AuditMixin <|-- Vehiculo
+SoftDeleteMixin <|-- Vehiculo
+Vehiculo --> TipoVehiculo : tipo
+
+RepositorioLectura <|-- VehiculoRepository
+RepositorioEscritura <|-- VehiculoRepository
+RepositorioBorrado <|-- VehiculoRepository
+
+VehiculoService --> VehiculoRepository
+
+note right of Vehiculo
+  usuario_id es un entero sin clave foránea:
+  el usuario vive en la base de ms-usuarios
+  y los microservicios no comparten base de datos.
+end note
+
+note bottom of RepositorioBorrado
+  eliminar() completa deleted_at (soft delete):
+  el registro se conserva pero deja de listarse.
+end note
+@enduml
