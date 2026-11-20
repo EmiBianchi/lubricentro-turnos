@@ -44,3 +44,12 @@ class CasoBase(unittest.TestCase):
         return self.cliente_http.post(
             "/api/v1/auth/login", json={"email": email, "password": password}
         )
+
+    def encabezado_con_token(self, email: str = "juan@mail.com",
+                             password: str = "clave123") -> dict:
+        """Inicia sesión y arma el encabezado Authorization para los endpoints protegidos.
+
+        :return: diccionario de encabezados HTTP con el token Bearer.
+        """
+        token = self.iniciar_sesion(email, password).get_json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
