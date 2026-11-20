@@ -20,10 +20,10 @@ Cada historia y cada tarea técnica se carga como un issue en GitHub.
 
 | ID | Nombre | Enunciado | Criterios de aceptación | Prioridad | Esfuerzo | Sprint | Estado |
 |----|--------|-----------|-------------------------|-----------|----------|--------|--------|
-| HU-01 | Registrar cuenta | Como cliente necesito registrarme con mi nombre, email y contraseña con la finalidad de poder reservar turnos. | • Nombre, email y contraseña son obligatorios.<br>• El email no puede estar registrado previamente.<br>• La contraseña se guarda cifrada.<br>• La respuesta no incluye la contraseña.<br>• El usuario creado tiene rol "cliente". | Alta | Medio | 1 | Todo |
-| HU-02 | Iniciar sesión | Como cliente necesito iniciar sesión con mi email y contraseña con la finalidad de acceder a mis datos y turnos. | • Con credenciales correctas devuelve un token JWT.<br>• Con email o contraseña incorrectos devuelve error 401.<br>• El token tiene fecha de expiración. | Alta | Medio | 1 | Todo |
-| HU-03 | Ver mi perfil | Como cliente necesito ver mis datos con la finalidad de verificar que estén correctos. | • Requiere token válido.<br>• Devuelve nombre, email y rol, sin contraseña.<br>• Sin token devuelve error 401. | Media | Bajo | 1 | Todo |
-| HU-04 | Control por roles | Como administrador necesito que ciertas funciones sean exclusivas de mi rol con la finalidad de proteger la información del lubricentro. | • Existen los roles "cliente" y "admin".<br>• Un cliente que accede a una función de admin recibe error 403.<br>• El usuario admin se crea al iniciar el sistema, no por registro público. | Alta | Medio | 1 | Todo |
+| HU-01 | Registrar cuenta | Como cliente necesito registrarme con mi nombre, email y contraseña con la finalidad de poder reservar turnos. | • Nombre, email y contraseña son obligatorios.<br>• El email no puede estar registrado previamente.<br>• La contraseña se guarda cifrada.<br>• La respuesta no incluye la contraseña.<br>• El usuario creado tiene rol "cliente". | Alta | Medio | 1 | Done |
+| HU-02 | Iniciar sesión | Como cliente necesito iniciar sesión con mi email y contraseña con la finalidad de acceder a mis datos y turnos. | • Con credenciales correctas devuelve un token JWT.<br>• Con email o contraseña incorrectos devuelve error 401.<br>• El token tiene fecha de expiración. | Alta | Medio | 1 | Done |
+| HU-03 | Ver mi perfil | Como cliente necesito ver mis datos con la finalidad de verificar que estén correctos. | • Requiere token válido.<br>• Devuelve nombre, email y rol, sin contraseña.<br>• Sin token devuelve error 401. | Media | Bajo | 1 | Done |
+| HU-04 | Control por roles | Como administrador necesito que ciertas funciones sean exclusivas de mi rol con la finalidad de proteger la información del lubricentro. | • Existen los roles "cliente" y "admin".<br>• Un cliente que accede a una función de admin recibe error 403.<br>• El usuario admin se crea al iniciar el sistema, no por registro público. | Alta | Medio | 1 | Done |
 | HU-05 | Registrar vehículo | Como cliente necesito cargar mi vehículo con la finalidad de indicar cuál será atendido en el turno. | • Requiere token válido.<br>• Patente, tipo, marca, modelo y año son obligatorios.<br>• Tipo válido: moto, auto, camioneta o camion.<br>• La patente no puede repetirse.<br>• El vehículo queda asociado al cliente del token. | Alta | Medio | 2 | Todo |
 | HU-06 | Listar mis vehículos | Como cliente necesito ver mis vehículos con la finalidad de elegir cuál llevar al turno. | • Devuelve solo los vehículos del cliente del token.<br>• No muestra vehículos dados de baja. | Alta | Bajo | 2 | Todo |
 | HU-07 | Modificar vehículo | Como cliente necesito modificar los datos de mi vehículo con la finalidad de corregir errores de carga. | • Solo el dueño puede modificarlo (si no, error 403).<br>• Se aplican las mismas validaciones que al registrar. | Media | Bajo | 2 | Todo |
@@ -41,9 +41,9 @@ Cada historia y cada tarea técnica se carga como un issue en GitHub.
 |----|--------|-------------|-----------|----------|--------|--------|
 | TT-01 | Estructura inicial del repositorio | Crear repositorio, .gitignore y README. | Alta | Bajo | 0 | Done |
 | TT-02 | Requerimientos e historias de usuario | Documentar análisis de requerimientos e historias. | Alta | Medio | 0 | Done |
-| TT-03 | Configurar tablero de GitHub | Crear proyecto, etiquetas, milestones e issues. | Alta | Bajo | 0 | Todo |
-| TT-04 | Diagrama de clases | Diagramar las clases de los 3 microservicios en PlantUML. | Alta | Alto | 0 | Todo |
-| TT-05 | Base de datos en Docker | Levantar PostgreSQL con docker-compose y crear una base por microservicio. | Alta | Medio | 0 | Todo |
+| TT-03 | Configurar tablero de GitHub | Crear proyecto, etiquetas, milestones e issues. | Alta | Bajo | 0 | Done |
+| TT-04 | Diagrama de clases | Diagramar las clases de los 3 microservicios en PlantUML. | Alta | Alto | 0 | Done |
+| TT-05 | Base de datos en Docker | Levantar PostgreSQL con docker-compose y crear una base por microservicio. | Alta | Medio | 0 | Done |
 | TT-06 | Integración con docker-compose | Levantar los 3 microservicios y la base con un solo comando. | Alta | Alto | 4 | Todo |
 | TT-07 | Diagramas de secuencia | Diagramar en PlantUML el flujo de reserva de turno entre microservicios. | Media | Medio | 4 | Todo |
 | TT-08 | Documentación final | Completar el README con instrucciones de instalación, ejecución y pruebas. | Alta | Medio | 4 | Todo |
