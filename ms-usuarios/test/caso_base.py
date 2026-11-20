@@ -35,3 +35,12 @@ class CasoBase(unittest.TestCase):
             "/api/v1/usuarios",
             json={"nombre": nombre, "email": email, "password": password},
         )
+
+    def iniciar_sesion(self, email: str = "juan@mail.com", password: str = "clave123"):
+        """Llama al endpoint de login.
+
+        :return: respuesta HTTP del cliente de pruebas de Flask.
+        """
+        return self.cliente_http.post(
+            "/api/v1/auth/login", json={"email": email, "password": password}
+        )
