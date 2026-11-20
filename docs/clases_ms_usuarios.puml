@@ -64,6 +64,7 @@ package "services" {
     - encriptador: Encriptador
     + registrar(nombre: str, email: str, password: str): Usuario
     + obtener(id: int): Usuario
+    + listar(): list[Usuario]
     + crear_roles_iniciales(): None
     + crear_admin_inicial(nombre: str, email: str, password: str): None
   }

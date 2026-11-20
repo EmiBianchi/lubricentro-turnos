@@ -1,6 +1,7 @@
 from app import db
 
 ROL_CLIENTE = "cliente"
+ROL_ADMIN = "admin"
 
 
 class Rol(db.Model):

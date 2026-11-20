@@ -1,8 +1,8 @@
-from app.models import ROL_CLIENTE, Rol, Usuario
+from app.models import ROL_ADMIN, ROL_CLIENTE, Rol, Usuario
 from app.services.excepciones import EmailYaRegistrado, UsuarioNoEncontrado
 from app.services.security import Encriptador
 
-ROLES_INICIALES = (ROL_CLIENTE,)
+ROLES_INICIALES = (ROL_CLIENTE, ROL_ADMIN)
 
 
 class UsuarioService:
@@ -28,16 +28,13 @@ class UsuarioService:
         """
         if self._usuario_repo.buscar_por_email(email) is not None:
             raise EmailYaRegistrado(email)
-
         # El registro público asigna siempre "cliente": ningún dato del pedido
         # puede elegir el rol (HU-01 y HU-04).
-        usuario = Usuario(
-            nombre=nombre,
-            email=email,
-            password=self._encriptador.generar_hash(password),
-            rol=self._rol_repo.buscar_por_nombre(ROL_CLIENTE),
-        )
-        return self._usuario_repo.guardar(usuario)
+        return self._crear(nombre, email, password, ROL_CLIENTE)
+
+    def listar(self) -> list[Usuario]:
+        """:return: todos los usuarios. Función exclusiva del administrador (HU-04)."""
+        return self._usuario_repo.listar()
 
     def obtener(self, id: int) -> Usuario:
         """:return: el usuario con ese id.
@@ -53,3 +50,22 @@ class UsuarioService:
         for nombre in ROLES_INICIALES:
             if self._rol_repo.buscar_por_nombre(nombre) is None:
                 self._rol_repo.guardar(Rol(nombre=nombre))
+
+    def crear_admin_inicial(self, nombre: str, email: str, password: str) -> None:
+        """Crea el administrador si todavía no existe.
+
+        Es el único camino para obtener el rol admin: se invoca al arrancar el
+        sistema con datos del .env, nunca desde un endpoint público (HU-04).
+        """
+        if self._usuario_repo.buscar_por_email(email) is None:
+            self._crear(nombre, email, password, ROL_ADMIN)
+
+    def _crear(self, nombre: str, email: str, password: str, nombre_rol: str) -> Usuario:
+        # Alta común a clientes y admin (DRY): solo cambia el rol asignado.
+        usuario = Usuario(
+            nombre=nombre,
+            email=email,
+            password=self._encriptador.generar_hash(password),
+            rol=self._rol_repo.buscar_por_nombre(nombre_rol),
+        )
+        return self._usuario_repo.guardar(usuario)
