@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,6 +11,10 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Clave con la que se firman los tokens. ms-vehiculos y ms-turnos usarán la
+    # misma para validarlos sin consultar a ms-usuarios en cada pedido.
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=int(os.getenv("JWT_EXPIRA_MINUTOS", "60")))
 
 
 class DevelopmentConfig(Config):
@@ -22,6 +27,8 @@ class TestingConfig(Config):
     # SQLite en memoria: cada test crea y destruye sus tablas sin depender de
     # Docker ni ensuciar usuarios_db (tests rápidos, independientes e inocuos).
     SQLALCHEMY_DATABASE_URI = "sqlite://"
+    # Clave fija para que los tests no dependan del .env de cada máquina.
+    JWT_SECRET_KEY = "clave-solo-para-tests-de-al-menos-32-caracteres"
 
 
 class ProductionConfig(Config):
