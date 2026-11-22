@@ -23,6 +23,10 @@ class VehiculoService:
         self._validar_patente_libre(datos["patente"])
         return self._vehiculo_repo.guardar(Vehiculo(usuario_id=usuario_id, **datos))
 
+    def listar_de_usuario(self, usuario_id: int) -> list[Vehiculo]:
+        """:return: los vehículos activos del cliente; no incluye los dados de baja."""
+        return self._vehiculo_repo.listar_por_usuario(usuario_id)
+
     def _validar_patente_libre(self, patente: str) -> None:
         if self._vehiculo_repo.buscar_por_patente(patente) is not None:
             raise PatenteYaRegistrada(patente)

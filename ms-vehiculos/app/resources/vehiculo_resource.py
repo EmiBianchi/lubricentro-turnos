@@ -6,6 +6,7 @@ from app.services.fabrica import crear_vehiculo_service
 
 vehiculo_bp = Blueprint("vehiculos", __name__)
 vehiculo_schema = VehiculoSchema()
+vehiculos_schema = VehiculoSchema(many=True)
 
 
 def _cliente_del_token() -> int:
@@ -23,3 +24,11 @@ def registrar():
     datos = vehiculo_schema.load(request.get_json(silent=True) or {})
     vehiculo = crear_vehiculo_service().registrar(_cliente_del_token(), datos)
     return vehiculo_schema.dump(vehiculo), 201
+
+
+@vehiculo_bp.route("", methods=["GET"])
+@jwt_required()
+def listar():
+    """GET /api/v1/vehiculos — vehículos activos del cliente del token (HU-06)."""
+    vehiculos = crear_vehiculo_service().listar_de_usuario(_cliente_del_token())
+    return vehiculos_schema.dump(vehiculos), 200
