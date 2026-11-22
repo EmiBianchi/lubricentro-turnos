@@ -1,12 +1,19 @@
 from flask import Flask
 from marshmallow import ValidationError
 
-from app.services.excepciones import ErrorDeNegocio, PatenteYaRegistrada
+from app.services.excepciones import (
+    ErrorDeNegocio,
+    PatenteYaRegistrada,
+    VehiculoAjeno,
+    VehiculoNoEncontrado,
+)
 
 # Traducción de errores de negocio a HTTP en un único lugar: una regla nueva se
 # agrega como otra entrada del diccionario, sin modificar los manejadores (OCP).
 CODIGOS_HTTP = {
     PatenteYaRegistrada: 409,
+    VehiculoAjeno: 403,
+    VehiculoNoEncontrado: 404,
 }
 
 
