@@ -1,8 +1,10 @@
 import unittest
+from datetime import datetime, timezone
 
 from flask_jwt_extended import create_access_token
 
 from app import create_app, db
+from app.models import Vehiculo
 
 URL_VEHICULOS = "/api/v1/vehiculos"
 
@@ -54,3 +56,20 @@ class CasoBase(unittest.TestCase):
             URL_VEHICULOS, json={**VEHICULO_VALIDO, **cambios},
             headers=self.encabezado_de(usuario_id),
         )
+
+    def listar_vehiculos(self, usuario_id: int = 1):
+        """Llama al endpoint de listado con el token del cliente indicado.
+
+        :return: respuesta HTTP del cliente de pruebas de Flask.
+        """
+        return self.cliente_http.get(URL_VEHICULOS, headers=self.encabezado_de(usuario_id))
+
+    def marcar_como_eliminado(self, vehiculo_id: int) -> None:
+        """Completa deleted_at directamente en la base, sin pasar por la API.
+
+        Permite probar que los listados ignoran los vehículos dados de baja sin
+        depender del endpoint de baja (HU-08).
+        """
+        vehiculo = db.session.get(Vehiculo, vehiculo_id)
+        vehiculo.deleted_at = datetime.now(timezone.utc)
+        db.session.commit()
