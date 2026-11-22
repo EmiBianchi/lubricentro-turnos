@@ -32,3 +32,14 @@ def listar():
     """GET /api/v1/vehiculos — vehículos activos del cliente del token (HU-06)."""
     vehiculos = crear_vehiculo_service().listar_de_usuario(_cliente_del_token())
     return vehiculos_schema.dump(vehiculos), 200
+
+
+@vehiculo_bp.route("/<int:id>", methods=["PUT"])
+@jwt_required()
+def modificar(id: int):
+    """PUT /api/v1/vehiculos/<id> — corrige los datos de un vehículo propio (HU-07)."""
+    # PUT y no PATCH: se envía el vehículo completo y pasa por el mismo schema que
+    # el registro, así las validaciones son idénticas (criterio de HU-07).
+    datos = vehiculo_schema.load(request.get_json(silent=True) or {})
+    vehiculo = crear_vehiculo_service().modificar(id, _cliente_del_token(), datos)
+    return vehiculo_schema.dump(vehiculo), 200
