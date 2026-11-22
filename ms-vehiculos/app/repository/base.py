@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from app import db
+from app.models.audit_mixin import ahora
 
 
 class RepositorioLectura(ABC):
@@ -40,3 +41,22 @@ class RepositorioEscritura(ABC):
         db.session.add(entidad)
         db.session.commit()
         return entidad
+
+
+class RepositorioBorrado(ABC):
+    """Baja lógica (soft delete) común a los modelos que heredan SoftDeleteMixin.
+
+    Separada de la escritura (ISP): un repositorio que no admite bajas no hereda
+    un eliminar() que no podría cumplir.
+    """
+
+    @property
+    @abstractmethod
+    def modelo(self) -> type:
+        """Clase del modelo que administra el repositorio."""
+
+    def eliminar(self, entidad) -> None:
+        """Completa deleted_at en lugar de ejecutar un DELETE: el registro se
+        conserva pero las consultas de listado dejan de devolverlo."""
+        entidad.deleted_at = ahora()
+        db.session.commit()

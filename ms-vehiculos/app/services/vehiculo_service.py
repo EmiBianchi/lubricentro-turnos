@@ -60,6 +60,14 @@ class VehiculoService:
             setattr(vehiculo, campo, valor)
         return self._vehiculo_repo.guardar(vehiculo)
 
+    def dar_de_baja(self, id: int, usuario_id: int) -> None:
+        """Baja lógica de un vehículo del cliente (HU-08).
+
+        :raises VehiculoNoEncontrado, VehiculoAjeno: ver obtener_de_usuario.
+        """
+        vehiculo = self.obtener_de_usuario(id, usuario_id)
+        self._vehiculo_repo.eliminar(vehiculo)
+
     def _validar_patente_libre(self, patente: str, id_propio: int | None = None) -> None:
         # id_propio: al modificar, la patente actual del mismo vehículo no es un duplicado.
         existente = self._vehiculo_repo.buscar_por_patente(patente)

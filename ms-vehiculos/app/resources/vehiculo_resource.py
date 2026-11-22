@@ -43,3 +43,12 @@ def modificar(id: int):
     datos = vehiculo_schema.load(request.get_json(silent=True) or {})
     vehiculo = crear_vehiculo_service().modificar(id, _cliente_del_token(), datos)
     return vehiculo_schema.dump(vehiculo), 200
+
+
+@vehiculo_bp.route("/<int:id>", methods=["DELETE"])
+@jwt_required()
+def dar_de_baja(id: int):
+    """DELETE /api/v1/vehiculos/<id> — baja lógica de un vehículo propio (HU-08)."""
+    crear_vehiculo_service().dar_de_baja(id, _cliente_del_token())
+    # 204: la operación salió bien y no hay contenido que devolver.
+    return "", 204
