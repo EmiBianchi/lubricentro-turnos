@@ -13,6 +13,10 @@ class Config:
     # Misma clave que ms-usuarios: este servicio no emite tokens, solo verifica su
     # firma. Así identifica al cliente sin consultar a ms-usuarios en cada pedido.
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    # Dirección de ms-vehiculos en el .env: en Docker (TT-06) cambia a
+    # http://<nombre-del-servicio>:5002 sin tocar el código. El valor por defecto
+    # es el de desarrollo local, para no romper el arranque si falta en el .env.
+    VEHICULOS_URL = os.getenv("VEHICULOS_URL", "http://localhost:5002")
 
 
 class DevelopmentConfig(Config):

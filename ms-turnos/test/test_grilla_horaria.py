@@ -44,3 +44,13 @@ class GrillaHorariaTestCase(unittest.TestCase):
     def test_hora_fin_suma_la_duracion_de_un_turno(self):
         self.assertEqual(self.grilla.hora_fin(time(12, 30)), time(13, 0))
         self.assertEqual(self.grilla.hora_fin(time(20, 0)), time(20, 30))
+
+    def test_franja_de_un_horario_de_la_grilla(self):
+        self.assertEqual(self.grilla.franja_de(time(8, 0)), Franja.MANANA)
+        self.assertEqual(self.grilla.franja_de(time(12, 30)), Franja.MANANA)
+        self.assertEqual(self.grilla.franja_de(time(16, 30)), Franja.TARDE)
+
+    def test_franja_de_un_horario_fuera_de_la_grilla_es_none(self):
+        for hora in (time(8, 15), time(13, 0), time(14, 0), time(20, 30)):
+            with self.subTest(hora=hora):
+                self.assertIsNone(self.grilla.franja_de(hora))

@@ -46,6 +46,11 @@ class GrillaHoraria:
             return []
         return [hora for franja in Franja for hora in self.horarios_de_franja(franja)]
 
+    def franja_de(self, hora: time) -> Franja | None:
+        """:return: la franja a la que pertenece el horario, o None si no es un
+        horario de la grilla (p. ej. 08:15, 13:00 o 14:00)."""
+        return next((franja for franja in Franja if hora in self.horarios_de_franja(franja)), None)
+
     def hora_fin(self, hora: time) -> time:
         """:return: la hora en que termina un turno que empieza a esa hora."""
         # time no admite sumas: se pasa por datetime con una fecha cualquiera.

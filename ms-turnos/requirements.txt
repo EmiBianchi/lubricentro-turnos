@@ -6,3 +6,4 @@ marshmallow~=3.26
 Flask-JWT-Extended~=4.7
 psycopg2-binary~=2.9
 python-dotenv~=1.1
+requests~=2.32
