@@ -51,3 +51,12 @@ def listar_mis_turnos():
     """GET /api/v1/turnos — turnos no cancelados del cliente del token (HU-12)."""
     turnos = crear_turno_service().listar_de_usuario(_cliente_del_token())
     return turnos_schema.dump(turnos), 200
+
+
+@turno_bp.route("/<int:id>", methods=["DELETE"])
+@jwt_required()
+def cancelar(id: int):
+    """DELETE /api/v1/turnos/<id> — baja lógica de un turno propio y futuro (HU-13)."""
+    crear_turno_service().cancelar(id, _cliente_del_token())
+    # 204: la operación salió bien y no hay contenido que devolver.
+    return "", 204
