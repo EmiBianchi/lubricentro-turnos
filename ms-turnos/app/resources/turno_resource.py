@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.mapping import ConsultaFechaSchema, HorarioDisponibleSchema, ReservaSchema, TurnoSchema
+from app.resources.autorizacion import ROL_ADMIN, rol_requerido
 from app.services.fabrica import crear_turno_service
 
 turno_bp = Blueprint("turnos", __name__)
@@ -51,6 +52,14 @@ def listar_mis_turnos():
     """GET /api/v1/turnos — turnos no cancelados del cliente del token (HU-12)."""
     turnos = crear_turno_service().listar_de_usuario(_cliente_del_token())
     return turnos_schema.dump(turnos), 200
+
+
+@turno_bp.route("/agenda", methods=["GET"])
+@rol_requerido(ROL_ADMIN)
+def agenda_del_dia():
+    """GET /api/v1/turnos/agenda?fecha=AAAA-MM-DD — turnos del día, solo administrador (HU-14)."""
+    fecha = consulta_schema.load(request.args)["fecha"]
+    return turnos_schema.dump(crear_turno_service().agenda_del_dia(fecha)), 200
 
 
 @turno_bp.route("/<int:id>", methods=["DELETE"])
