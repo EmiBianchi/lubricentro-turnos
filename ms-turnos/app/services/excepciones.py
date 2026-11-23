@@ -25,6 +25,14 @@ class HorarioFueraDeGrilla(ErrorDeNegocio):
                          "disponibilidad del día para ver los horarios válidos.")
 
 
+class HorarioNoPermitidoParaCamion(ErrorDeNegocio):
+
+    def __init__(self, horarios_permitidos: list[time]):
+        # Los horarios llegan desde la grilla para no repetirlos en el mensaje (DRY).
+        permitidos = " o ".join(f"{hora:%H:%M}" for hora in horarios_permitidos)
+        super().__init__(f"Los camiones solo pueden reservar a las {permitidos}.")
+
+
 class VehiculoNoEncontrado(ErrorDeNegocio):
 
     def __init__(self, vehiculo_id: int):
