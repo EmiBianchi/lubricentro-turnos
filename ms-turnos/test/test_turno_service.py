@@ -74,6 +74,9 @@ class RepositorioTurnosFalso:
             self._ocupaciones.ocupaciones.remove(ocupacion)
         turno.ocupaciones = []
 
+    def listar_por_fecha(self, fecha):
+        return [t for t in self.turnos if t.fecha == fecha and t.deleted_at is None]
+
     def listar_por_usuario(self, usuario_id):
         return [t for t in self.turnos if t.usuario_id == usuario_id and t.deleted_at is None]
 
@@ -246,3 +249,12 @@ class TurnoServiceTestCase(unittest.TestCase):
         with self.assertRaises(TurnoNoCancelable):
             self.servicio.cancelar(turno.id, 1)
         self.assertIsNone(turno.deleted_at)
+
+    # HU-14 — Agenda del día
+
+    def test_agenda_del_dia_devuelve_los_turnos_de_todos_los_clientes(self):
+        self.reservar(usuario_id=1)
+        self.reservar(usuario_id=2)
+        self.reservar(usuario_id=1, fecha=date(2026, 11, 25))
+        turnos = self.servicio.agenda_del_dia(MARTES)
+        self.assertEqual(sorted(turno.usuario_id for turno in turnos), [1, 2])
