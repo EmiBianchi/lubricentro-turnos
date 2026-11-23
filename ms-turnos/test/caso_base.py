@@ -1,5 +1,5 @@
 import unittest
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from unittest.mock import patch
 
 from flask_jwt_extended import create_access_token, decode_token
@@ -123,6 +123,23 @@ class CasoBase(unittest.TestCase):
             URL_TURNOS, json={"vehiculo_id": vehiculo_id, "fecha": fecha.isoformat(), "hora": hora},
             headers=self.encabezado_de(usuario_id),
         )
+
+    def listar_mis_turnos(self, usuario_id: int = 1):
+        """Llama al endpoint de listado con el token del cliente indicado.
+
+        :return: respuesta HTTP del cliente de pruebas de Flask.
+        """
+        return self.cliente_http.get(URL_TURNOS, headers=self.encabezado_de(usuario_id))
+
+    def marcar_como_cancelado(self, turno_id: int) -> None:
+        """Completa deleted_at directamente en la base, sin pasar por la API.
+
+        Permite probar que los listados ignoran los turnos cancelados sin depender
+        del endpoint de cancelación (HU-13).
+        """
+        turno = db.session.get(Turno, turno_id)
+        turno.deleted_at = datetime.now(timezone.utc)
+        db.session.commit()
 
     def ocupar(self, fecha: date, horarios: list[time], box: int, usuario_id: int = 1) -> Turno:
         """Guarda un turno directamente en la base, sin pasar por la API.
