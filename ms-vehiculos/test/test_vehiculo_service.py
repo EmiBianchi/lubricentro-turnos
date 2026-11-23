@@ -25,6 +25,9 @@ class RepositorioVehiculosFalso:
             self.vehiculos.append(vehiculo)
         return vehiculo
 
+    def eliminar(self, vehiculo):
+        vehiculo.deleted_at = "fecha de baja"
+
 
 def datos_vehiculo(**cambios) -> dict:
     datos = {"patente": "AB123CD", "tipo": TipoVehiculo.AUTO, "marca": "Ford",
@@ -56,3 +59,14 @@ class VehiculoServiceTestCase(unittest.TestCase):
         vehiculo = self.servicio.registrar(1, datos_vehiculo())
         modificado = self.servicio.modificar(vehiculo.id, 1, datos_vehiculo(marca="Fiat"))
         self.assertEqual(modificado.marca, "Fiat")
+
+    def test_dar_de_baja_completa_deleted_at(self):
+        vehiculo = self.servicio.registrar(1, datos_vehiculo())
+        self.servicio.dar_de_baja(vehiculo.id, 1)
+        self.assertIsNotNone(vehiculo.deleted_at)
+
+    def test_dar_de_baja_vehiculo_ajeno_lanza_excepcion(self):
+        vehiculo = self.servicio.registrar(1, datos_vehiculo())
+        with self.assertRaises(VehiculoAjeno):
+            self.servicio.dar_de_baja(vehiculo.id, 2)
+        self.assertIsNone(vehiculo.deleted_at)

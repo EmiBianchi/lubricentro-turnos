@@ -1,9 +1,9 @@
 from app import db
 from app.models import Vehiculo
-from app.repository.base import RepositorioEscritura, RepositorioLectura
+from app.repository.base import RepositorioBorrado, RepositorioEscritura, RepositorioLectura
 
 
-class VehiculoRepository(RepositorioLectura, RepositorioEscritura):
+class VehiculoRepository(RepositorioLectura, RepositorioEscritura, RepositorioBorrado):
     modelo = Vehiculo
 
     def buscar_por_patente(self, patente: str) -> Vehiculo | None:
