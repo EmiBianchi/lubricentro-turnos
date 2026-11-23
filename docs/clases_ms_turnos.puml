@@ -75,6 +75,7 @@ package "services" {
     + horarios_del_dia(fecha: date): list[time]
     + horarios_de_franja(franja: Franja): list[time]
     + franja_de(hora: time): Franja
+    + hora_fin(hora: time): time
   }
 
   abstract class ReglaReserva {
