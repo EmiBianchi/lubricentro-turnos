@@ -1,15 +1,21 @@
 import unittest
 from datetime import date, datetime, time, timedelta
+from unittest.mock import patch
 
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, decode_token
 
 from app import create_app, db
 from app.models import Ocupacion, Turno
+from app.services.excepciones import ServicioVehiculosNoDisponible
 
 URL_TURNOS = "/api/v1/turnos"
 URL_DISPONIBILIDAD = f"{URL_TURNOS}/disponibilidad"
 
 LUNES, SABADO, DOMINGO = 0, 5, 6
+
+# Vehículos que ms-vehiculos (simulado) tiene registrados en cada test.
+AUTO_DEL_CLIENTE_1 = 10
+AUTO_DEL_CLIENTE_2 = 20
 
 
 def proximo(dia_semana: int) -> date:
@@ -28,6 +34,28 @@ def ayer() -> date:
     return date.today() - timedelta(days=1)
 
 
+class ClienteVehiculosFalso:
+    """Reemplaza a ms-vehiculos en los tests: no hace falta levantarlo (DIP).
+
+    Identifica al cliente decodificando el token, igual que ms-vehiculos, y solo
+    devuelve vehículos de ese cliente: así se prueba de verdad la regla de dueño.
+    """
+
+    def __init__(self):
+        self.vehiculos = []
+        self.caido = False
+
+    def agregar(self, id: int, usuario_id: int, tipo: str = "auto", patente: str = "AB123CD"):
+        self.vehiculos.append({"id": id, "usuario_id": usuario_id, "tipo": tipo, "patente": patente})
+
+    def obtener_vehiculo(self, vehiculo_id: int, token: str) -> dict | None:
+        if self.caido:
+            raise ServicioVehiculosNoDisponible()
+        usuario_id = int(decode_token(token)["sub"])
+        return next((v for v in self.vehiculos
+                     if v["id"] == vehiculo_id and v["usuario_id"] == usuario_id), None)
+
+
 class CasoBase(unittest.TestCase):
     """Base de los tests que necesitan la aplicación y la base de datos.
 
@@ -41,6 +69,14 @@ class CasoBase(unittest.TestCase):
         self.contexto.push()
         db.create_all()
         self.cliente_http = self.app.test_client()
+
+        self.ms_vehiculos = ClienteVehiculosFalso()
+        self.ms_vehiculos.agregar(AUTO_DEL_CLIENTE_1, usuario_id=1, patente="AB123CD")
+        self.ms_vehiculos.agregar(AUTO_DEL_CLIENTE_2, usuario_id=2, patente="AC456DE")
+        # La fábrica arma el cliente HTTP real; se reemplaza solo durante el test.
+        parche = patch("app.services.fabrica.ClienteVehiculosHTTP", return_value=self.ms_vehiculos)
+        parche.start()
+        self.addCleanup(parche.stop)
 
     def tearDown(self):
         db.session.remove()
@@ -71,6 +107,18 @@ class CasoBase(unittest.TestCase):
         """:return: {"08:00": boxes libres, ...} según el endpoint de disponibilidad."""
         horarios = self.consultar_disponibilidad(fecha).get_json()["horarios"]
         return {horario["hora"]: horario["boxes_libres"] for horario in horarios}
+
+    def reservar(self, usuario_id: int = 1, vehiculo_id: int = AUTO_DEL_CLIENTE_1,
+                 fecha: date | None = None, hora: str = "08:00"):
+        """Llama al endpoint de reserva; por defecto, el próximo lunes a las 08:00.
+
+        :return: respuesta HTTP del cliente de pruebas de Flask.
+        """
+        fecha = fecha or proximo(LUNES)
+        return self.cliente_http.post(
+            URL_TURNOS, json={"vehiculo_id": vehiculo_id, "fecha": fecha.isoformat(), "hora": hora},
+            headers=self.encabezado_de(usuario_id),
+        )
 
     def ocupar(self, fecha: date, horarios: list[time], box: int, usuario_id: int = 1) -> Turno:
         """Guarda un turno directamente en la base, sin pasar por la API.
