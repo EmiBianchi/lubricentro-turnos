@@ -8,6 +8,9 @@ from app.services.excepciones import (
     FechaPasada,
     HorarioFueraDeGrilla,
     SinBoxDisponible,
+    TurnoAjeno,
+    TurnoNoCancelable,
+    TurnoNoEncontrado,
     VehiculoNoEncontrado,
 )
 from app.services.grilla_horaria import GrillaHoraria
@@ -61,6 +64,15 @@ class RepositorioTurnosFalso:
             self.turnos.append(turno)
             self._ocupaciones.ocupaciones.extend(turno.ocupaciones)
         return turno
+
+    def buscar_por_id(self, id):
+        return next((t for t in self.turnos if t.id == id), None)
+
+    def eliminar(self, turno):
+        turno.deleted_at = "fecha de baja"
+        for ocupacion in turno.ocupaciones:
+            self._ocupaciones.ocupaciones.remove(ocupacion)
+        turno.ocupaciones = []
 
     def listar_por_usuario(self, usuario_id):
         return [t for t in self.turnos if t.usuario_id == usuario_id and t.deleted_at is None]
@@ -203,3 +215,34 @@ class TurnoServiceTestCase(unittest.TestCase):
         self.reservar(usuario_id=2)
         turnos = self.servicio.listar_de_usuario(2)
         self.assertEqual([turno.usuario_id for turno in turnos], [2])
+
+    # HU-13 — Cancelar turno
+
+    def test_cancelar_completa_deleted_at_y_libera_el_horario(self):
+        turno = self.reservar(hora=time(9, 0))
+        self.servicio.cancelar(turno.id, 1)
+        self.assertIsNotNone(turno.deleted_at)
+        self.assertEqual(self.libres_por_hora(MARTES)[time(9, 0)], 2)
+
+    def test_cancelar_turno_ajeno_lanza_excepcion(self):
+        turno = self.reservar(usuario_id=1)
+        with self.assertRaises(TurnoAjeno):
+            self.servicio.cancelar(turno.id, 2)
+        self.assertIsNone(turno.deleted_at)
+
+    def test_cancelar_turno_inexistente_lanza_excepcion(self):
+        with self.assertRaises(TurnoNoEncontrado):
+            self.servicio.cancelar(999, 1)
+
+    def test_cancelar_turno_ya_cancelado_lanza_excepcion(self):
+        turno = self.reservar()
+        self.servicio.cancelar(turno.id, 1)
+        with self.assertRaises(TurnoNoEncontrado):
+            self.servicio.cancelar(turno.id, 1)
+
+    def test_cancelar_un_turno_de_hoy_que_ya_empezo_lanza_excepcion(self):
+        turno = self.reservar(fecha=LUNES, hora=time(10, 30))
+        self.reloj.momento = datetime(2026, 11, 23, 10, 45)
+        with self.assertRaises(TurnoNoCancelable):
+            self.servicio.cancelar(turno.id, 1)
+        self.assertIsNone(turno.deleted_at)

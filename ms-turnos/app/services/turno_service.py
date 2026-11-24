@@ -8,6 +8,9 @@ from app.services.excepciones import (
     DiaNoHabil,
     FechaPasada,
     SinBoxDisponible,
+    TurnoAjeno,
+    TurnoNoCancelable,
+    TurnoNoEncontrado,
     VehiculoNoEncontrado,
 )
 from app.services.grilla_horaria import GrillaHoraria
@@ -93,6 +96,24 @@ class TurnoService:
     def listar_de_usuario(self, usuario_id: int) -> list[Turno]:
         """:return: los turnos del cliente (HU-12); no incluye los cancelados."""
         return self._turno_repo.listar_por_usuario(usuario_id)
+
+    def cancelar(self, turno_id: int, usuario_id: int) -> None:
+        """Baja lógica de un turno futuro del cliente; el horario vuelve a quedar libre (HU-13).
+
+        :raises TurnoNoEncontrado: si no existe o ya fue cancelado.
+        :raises TurnoAjeno: si pertenece a otro cliente.
+        :raises TurnoNoCancelable: si el turno ya empezó o pasó.
+        """
+        turno = self._turno_repo.buscar_por_id(turno_id)
+        if turno is None or turno.deleted_at is not None:
+            raise TurnoNoEncontrado(turno_id)
+        if turno.usuario_id != usuario_id:
+            raise TurnoAjeno()
+        # Cancelar un turno pasado no liberaría nada y borraría el registro de
+        # que el vehículo fue atendido.
+        if datetime.combine(turno.fecha, turno.hora_inicio) <= self._reloj.ahora():
+            raise TurnoNoCancelable()
+        self._turno_repo.eliminar(turno)
 
     def _box_libre(self, fecha: date, horarios: list[time]) -> int:
         # El box debe estar libre en TODOS los horarios: un camión necesita la

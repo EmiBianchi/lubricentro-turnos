@@ -27,6 +27,17 @@ class TurnoRepository(RepositorioLectura, RepositorioEscritura, RepositorioBorra
             db.session.rollback()
             raise CasilleroOcupado() from error
 
+    def eliminar(self, turno: Turno) -> None:
+        """Cancela el turno con baja lógica y libera sus casilleros (RN-09).
+
+        Las ocupaciones sí se borran: no son historial sino el bloqueo de boxes, y
+        si quedaran, la restricción única impediría volver a reservar el horario.
+        El turno conserva fecha, hora y box. Todo se confirma en un mismo commit.
+        """
+        # clear() + delete-orphan: SQLAlchemy borra las ocupaciones al confirmar.
+        turno.ocupaciones.clear()
+        super().eliminar(turno)
+
     def listar_por_usuario(self, usuario_id: int) -> list[Turno]:
         """:return: los turnos no cancelados del cliente, del más próximo al más lejano.
 

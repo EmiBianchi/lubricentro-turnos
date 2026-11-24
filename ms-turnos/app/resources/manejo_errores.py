@@ -5,6 +5,8 @@ from app.services.excepciones import (
     ErrorDeNegocio,
     ServicioVehiculosNoDisponible,
     SinBoxDisponible,
+    TurnoAjeno,
+    TurnoNoEncontrado,
     VehiculoNoEncontrado,
 )
 
@@ -16,6 +18,8 @@ CODIGOS_HTTP = {
     SinBoxDisponible: 409,
     # 503: la falla es de otro microservicio, no del pedido del cliente.
     ServicioVehiculosNoDisponible: 503,
+    TurnoNoEncontrado: 404,
+    TurnoAjeno: 403,
 }
 
 

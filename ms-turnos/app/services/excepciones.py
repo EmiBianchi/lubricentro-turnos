@@ -57,3 +57,22 @@ class ServicioVehiculosNoDisponible(ErrorDeNegocio):
 
     def __init__(self):
         super().__init__("No se pudo consultar el vehículo. Intentá nuevamente en unos minutos.")
+
+
+class TurnoNoEncontrado(ErrorDeNegocio):
+
+    def __init__(self, turno_id: int):
+        super().__init__(f"No existe el turno {turno_id}.")
+
+
+class TurnoAjeno(ErrorDeNegocio):
+
+    def __init__(self):
+        # 403 y no 404: el turno existe pero pertenece a otro cliente (HU-13).
+        super().__init__("El turno pertenece a otro cliente.")
+
+
+class TurnoNoCancelable(ErrorDeNegocio):
+
+    def __init__(self):
+        super().__init__("Solo se pueden cancelar turnos que todavía no empezaron.")
