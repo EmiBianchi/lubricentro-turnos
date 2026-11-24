@@ -18,6 +18,7 @@ LUNES = date(2026, 11, 23)
 MARTES = date(2026, 11, 24)
 DOMINGO = date(2026, 11, 29)
 AUTO = 10
+CAMION = 30
 TOKEN = "token-del-cliente"
 
 
@@ -81,7 +82,8 @@ class TurnoServiceTestCase(unittest.TestCase):
         self.ocupaciones = RepositorioOcupacionesFalso()
         self.turnos = RepositorioTurnosFalso(self.ocupaciones)
         self.vehiculos = ClienteVehiculosFalso(
-            {AUTO: {"id": AUTO, "tipo": "auto", "patente": "AB123CD"}})
+            {AUTO: {"id": AUTO, "tipo": "auto", "patente": "AB123CD"},
+             CAMION: {"id": CAMION, "tipo": "camion", "patente": "AD789EF"}})
         # "Ahora" es el lunes 23/11/2026 a las 10:00.
         self.reloj = RelojFijo(datetime(2026, 11, 23, 10, 0))
         self.servicio = TurnoService(self.turnos, self.ocupaciones, self.vehiculos,
@@ -162,3 +164,31 @@ class TurnoServiceTestCase(unittest.TestCase):
         self.turnos.simular_reserva_simultanea = True
         with self.assertRaises(SinBoxDisponible):
             self.reservar()
+
+    # HU-11 — Reservar turno de camión
+
+    def test_camion_de_la_manana_termina_a_las_1300_y_ocupa_10_casilleros(self):
+        turno = self.reservar(vehiculo_id=CAMION, hora=time(8, 0))
+        self.assertEqual(turno.hora_fin, time(13, 0))
+        self.assertEqual(len(turno.ocupaciones), 10)
+        self.assertTrue(all(ocupacion.box == turno.box for ocupacion in turno.ocupaciones))
+
+    def test_camion_de_la_tarde_termina_a_las_2030(self):
+        turno = self.reservar(vehiculo_id=CAMION, hora=time(16, 30))
+        self.assertEqual(turno.hora_fin, time(20, 30))
+
+    def test_camion_usa_el_box_que_tiene_toda_la_franja_libre(self):
+        self.ocupaciones.ocupaciones.append(Ocupacion(fecha=MARTES, hora=time(12, 0), box=1))
+        self.assertEqual(self.reservar(vehiculo_id=CAMION, hora=time(8, 0)).box, 2)
+
+    def test_camion_sin_un_box_con_la_franja_completa_libre_lanza_excepcion(self):
+        self.ocupaciones.ocupaciones.append(Ocupacion(fecha=MARTES, hora=time(12, 0), box=1))
+        self.ocupaciones.ocupaciones.append(Ocupacion(fecha=MARTES, hora=time(9, 30), box=2))
+        with self.assertRaises(SinBoxDisponible):
+            self.reservar(vehiculo_id=CAMION, hora=time(8, 0))
+
+    def test_camion_deja_el_box_sin_lugar_en_la_disponibilidad(self):
+        self.reservar(vehiculo_id=CAMION, hora=time(8, 0))
+        libres = self.libres_por_hora(MARTES)
+        self.assertTrue(all(libres[hora] == 1 for hora in libres if hora < time(13, 0)))
+        self.assertTrue(all(libres[hora] == 2 for hora in libres if hora > time(13, 0)))

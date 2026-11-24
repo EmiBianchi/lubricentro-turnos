@@ -16,6 +16,8 @@ LUNES, SABADO, DOMINGO = 0, 5, 6
 # Vehículos que ms-vehiculos (simulado) tiene registrados en cada test.
 AUTO_DEL_CLIENTE_1 = 10
 AUTO_DEL_CLIENTE_2 = 20
+CAMION_DEL_CLIENTE_1 = 60
+CAMION_DEL_CLIENTE_2 = 70
 
 
 def proximo(dia_semana: int) -> date:
@@ -73,6 +75,8 @@ class CasoBase(unittest.TestCase):
         self.ms_vehiculos = ClienteVehiculosFalso()
         self.ms_vehiculos.agregar(AUTO_DEL_CLIENTE_1, usuario_id=1, patente="AB123CD")
         self.ms_vehiculos.agregar(AUTO_DEL_CLIENTE_2, usuario_id=2, patente="AC456DE")
+        self.ms_vehiculos.agregar(CAMION_DEL_CLIENTE_1, usuario_id=1, tipo="camion", patente="AD789EF")
+        self.ms_vehiculos.agregar(CAMION_DEL_CLIENTE_2, usuario_id=2, tipo="camion", patente="AE012GH")
         # La fábrica arma el cliente HTTP real; se reemplaza solo durante el test.
         parche = patch("app.services.fabrica.ClienteVehiculosHTTP", return_value=self.ms_vehiculos)
         parche.start()

@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
 from datetime import time
 
-from app.services.excepciones import HorarioFueraDeGrilla, TipoVehiculoNoAdmitido
-from app.services.grilla_horaria import GrillaHoraria
+from app.services.excepciones import (
+    HorarioFueraDeGrilla,
+    HorarioNoPermitidoParaCamion,
+    TipoVehiculoNoAdmitido,
+)
+from app.services.grilla_horaria import Franja, GrillaHoraria
 
 
 class ReglaReserva(ABC):
@@ -34,6 +38,20 @@ class ReglaTurnoComun(ReglaReserva):
         return [hora]
 
 
+class ReglaTurnoCamion(ReglaReserva):
+    """Camiones: solo al inicio de una franja y ocupan el box hasta el cierre
+    (RN-06). Que el box esté libre toda la franja (RN-07) lo garantiza TurnoService
+    al buscar un box libre en todos los horarios devueltos aquí."""
+
+    def validar(self, hora: time, grilla: GrillaHoraria) -> None:
+        inicios = [grilla.horarios_de_franja(franja)[0] for franja in Franja]
+        if hora not in inicios:
+            raise HorarioNoPermitidoParaCamion(inicios)
+
+    def horarios_a_ocupar(self, hora: time, grilla: GrillaHoraria) -> list[time]:
+        return grilla.horarios_de_franja(grilla.franja_de(hora))
+
+
 class FabricaReglas:
     """Elige la regla según el tipo de vehículo (patrón Factory)."""
 
@@ -42,6 +60,7 @@ class FabricaReglas:
         "moto": ReglaTurnoComun,
         "auto": ReglaTurnoComun,
         "camioneta": ReglaTurnoComun,
+        "camion": ReglaTurnoCamion,
     }
 
     def crear(self, tipo_vehiculo: str) -> ReglaReserva:
