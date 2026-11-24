@@ -1,4 +1,29 @@
-from flask_jwt_extended import JWTManager
+from functools import wraps
+
+from flask_jwt_extended import JWTManager, get_jwt, verify_jwt_in_request
+
+# Nombre del rol tal como lo emite ms-usuarios en el claim "rol" del token.
+ROL_ADMIN = "admin"
+
+
+def rol_requerido(*roles_permitidos: str):
+    """Decorador que restringe un endpoint a ciertos roles (HU-04 y HU-14).
+
+    Copia del de ms-usuarios a propósito: cada microservicio se despliega por
+    separado (RNF-05). El rol se lee del token, sin consultar a ms-usuarios. Sin
+    token o con token inválido responde 401; con un token válido de otro rol, 403.
+
+    :param roles_permitidos: nombres de rol que pueden acceder, p. ej. "admin".
+    """
+    def decorador(funcion):
+        @wraps(funcion)
+        def envoltura(*args, **kwargs):
+            verify_jwt_in_request()
+            if get_jwt().get("rol") not in roles_permitidos:
+                return {"error": "No tiene permisos para esta operación."}, 403
+            return funcion(*args, **kwargs)
+        return envoltura
+    return decorador
 
 
 def registrar_manejadores_jwt(jwt: JWTManager) -> None:

@@ -97,6 +97,12 @@ class TurnoService:
         """:return: los turnos del cliente (HU-12); no incluye los cancelados."""
         return self._turno_repo.listar_por_usuario(usuario_id)
 
+    def agenda_del_dia(self, fecha: date) -> list[Turno]:
+        """:return: los turnos no cancelados de todos los clientes en esa fecha,
+        por hora y box (HU-14). Admite fechas pasadas: el admin puede revisar
+        qué se atendió."""
+        return self._turno_repo.listar_por_fecha(fecha)
+
     def cancelar(self, turno_id: int, usuario_id: int) -> None:
         """Baja lógica de un turno futuro del cliente; el horario vuelve a quedar libre (HU-13).
 

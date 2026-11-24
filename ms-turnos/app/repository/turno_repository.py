@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy.exc import IntegrityError
 
 from app import db
@@ -47,4 +49,12 @@ class TurnoRepository(RepositorioLectura, RepositorioEscritura, RepositorioBorra
         consulta = (db.select(Turno)
                     .filter_by(usuario_id=usuario_id, deleted_at=None)
                     .order_by(Turno.fecha, Turno.hora_inicio))
+        return list(db.session.scalars(consulta))
+
+    def listar_por_fecha(self, fecha: date) -> list[Turno]:
+        """:return: los turnos no cancelados del día, de todos los clientes,
+        ordenados por hora de inicio y box (HU-14)."""
+        consulta = (db.select(Turno)
+                    .filter_by(fecha=fecha, deleted_at=None)
+                    .order_by(Turno.hora_inicio, Turno.box))
         return list(db.session.scalars(consulta))
