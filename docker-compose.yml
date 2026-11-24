@@ -1,0 +1,105 @@
+# Sistema completo: PostgreSQL + los 3 microservicios con un solo comando.
+#   docker compose up -d --build
+#
+# Las variables ${...} se leen del archivo .env de esta misma carpeta (copiar
+# .env.example). Así ninguna contraseña ni clave queda escrita aquí (RNF-07).
+#
+# docker/postgres/docker-compose.yml se mantiene para el desarrollo local (base en
+# Docker y microservicios corriendo con "python app.py"). Ambos usan el mismo
+# container_name, así que Docker impide tenerlos encendidos a la vez: se baja uno
+# antes de subir el otro y nunca hay dos servidores escribiendo la misma carpeta data.
+
+services:
+  postgres:
+    image: postgres:16.2-bullseye
+    container_name: postgresql_servidor
+    ports:
+      # Solo para conectarse desde la computadora (DBeaver, pgAdmin). Los
+      # microservicios no lo usan: llegan por la red interna al puerto 5432.
+      - "${POSTGRES_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en el .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en el .env}
+    volumes:
+      # Mismas carpetas que docker/postgres: se reutilizan el script que crea una
+      # base por microservicio (DRY) y los datos ya cargados en desarrollo.
+      - ./docker/postgres/data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - lubricentro_red
+
+  ms-usuarios:
+    build: ./ms-usuarios
+    container_name: ms_usuarios
+    ports:
+      - "5001:5001"
+    environment:
+      # production: DEBUG apagado, sin el recargador de Flask (un solo proceso).
+      FLASK_CONTEXT: production
+      # El host es el nombre del contenedor de la base, no localhost: dentro de un
+      # contenedor, localhost es el propio contenedor. Puerto interno 5432.
+      PROD_DATABASE_URI: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql_servidor:5432/usuarios_db
+      PUERTO: 5001
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Falta JWT_SECRET_KEY en el .env}
+      JWT_EXPIRA_MINUTOS: ${JWT_EXPIRA_MINUTOS:-60}
+      ADMIN_NOMBRE: ${ADMIN_NOMBRE:-Administrador}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Falta ADMIN_EMAIL en el .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Falta ADMIN_PASSWORD en el .env}
+    depends_on:
+      # Espera a que la base acepte conexiones: si no, "flask db upgrade" falla
+      # en el primer arranque mientras PostgreSQL todavía se está iniciando.
+      postgres:
+        condition: service_healthy
+    networks:
+      - lubricentro_red
+
+  ms-vehiculos:
+    build: ./ms-vehiculos
+    container_name: ms_vehiculos
+    ports:
+      - "5002:5002"
+    environment:
+      FLASK_CONTEXT: production
+      PROD_DATABASE_URI: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql_servidor:5432/vehiculos_db
+      PUERTO: 5002
+      # Una sola variable para los tres servicios: es imposible que las claves
+      # difieran y que ms-vehiculos rechace los tokens emitidos por ms-usuarios.
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Falta JWT_SECRET_KEY en el .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lubricentro_red
+
+  ms-turnos:
+    build: ./ms-turnos
+    container_name: ms_turnos
+    ports:
+      - "5003:5003"
+    environment:
+      FLASK_CONTEXT: production
+      PROD_DATABASE_URI: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql_servidor:5432/turnos_db
+      PUERTO: 5003
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Falta JWT_SECRET_KEY en el .env}
+      # Nombre del servicio en la red compartida: Docker lo traduce a la IP del
+      # contenedor de ms-vehiculos. Es la misma variable que en local apunta a
+      # localhost:5002, por eso el código no cambia entre un entorno y otro.
+      VEHICULOS_URL: http://ms-vehiculos:5002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Al reservar, ms-turnos le consulta los vehículos del cliente.
+      ms-vehiculos:
+        condition: service_started
+    networks:
+      - lubricentro_red
+
+networks:
+  # Red virtual compartida: cada contenedor encuentra a los demás por su nombre.
+  lubricentro_red:
+    name: lubricentro_red
