@@ -1,0 +1,10 @@
+# Lo que NO se copia a la imagen con "COPY . .".
+# .env: las credenciales llegan como variables de entorno desde docker-compose.yml,
+# nunca quedan guardadas dentro de la imagen (RNF-07).
+.env
+# Entornos virtuales de Windows: no sirven en Linux y agrandan la imagen.
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
