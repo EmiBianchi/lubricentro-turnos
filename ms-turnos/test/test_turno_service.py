@@ -62,6 +62,9 @@ class RepositorioTurnosFalso:
             self._ocupaciones.ocupaciones.extend(turno.ocupaciones)
         return turno
 
+    def listar_por_usuario(self, usuario_id):
+        return [t for t in self.turnos if t.usuario_id == usuario_id and t.deleted_at is None]
+
 
 class ClienteVehiculosFalso:
     """Reemplaza la consulta HTTP a ms-vehiculos (DIP): devuelve el vehículo solo
@@ -192,3 +195,11 @@ class TurnoServiceTestCase(unittest.TestCase):
         libres = self.libres_por_hora(MARTES)
         self.assertTrue(all(libres[hora] == 1 for hora in libres if hora < time(13, 0)))
         self.assertTrue(all(libres[hora] == 2 for hora in libres if hora > time(13, 0)))
+
+    # HU-12 — Ver mis turnos
+
+    def test_listar_de_usuario_devuelve_solo_sus_turnos(self):
+        self.reservar(usuario_id=1)
+        self.reservar(usuario_id=2)
+        turnos = self.servicio.listar_de_usuario(2)
+        self.assertEqual([turno.usuario_id for turno in turnos], [2])

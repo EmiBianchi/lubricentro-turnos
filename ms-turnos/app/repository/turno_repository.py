@@ -26,3 +26,14 @@ class TurnoRepository(RepositorioLectura, RepositorioEscritura, RepositorioBorra
             # deshacer la transacción; además descarta el turno rechazado.
             db.session.rollback()
             raise CasilleroOcupado() from error
+
+    def listar_por_usuario(self, usuario_id: int) -> list[Turno]:
+        """:return: los turnos no cancelados del cliente, del más próximo al más lejano.
+
+        El filtro por deleted_at se hace en la consulta y no en el servicio: así
+        nunca se traen a memoria turnos que no se van a mostrar.
+        """
+        consulta = (db.select(Turno)
+                    .filter_by(usuario_id=usuario_id, deleted_at=None)
+                    .order_by(Turno.fecha, Turno.hora_inicio))
+        return list(db.session.scalars(consulta))

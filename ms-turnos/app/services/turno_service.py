@@ -90,6 +90,10 @@ class TurnoService:
             # la restricción única de la base decide cuál queda (RNF-02).
             raise SinBoxDisponible() from None
 
+    def listar_de_usuario(self, usuario_id: int) -> list[Turno]:
+        """:return: los turnos del cliente (HU-12); no incluye los cancelados."""
+        return self._turno_repo.listar_por_usuario(usuario_id)
+
     def _box_libre(self, fecha: date, horarios: list[time]) -> int:
         # El box debe estar libre en TODOS los horarios: un camión necesita la
         # franja completa en el mismo box (RN-07); un turno común, uno solo.

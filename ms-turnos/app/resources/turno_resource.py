@@ -9,6 +9,7 @@ consulta_schema = ConsultaFechaSchema()
 horarios_schema = HorarioDisponibleSchema(many=True)
 reserva_schema = ReservaSchema()
 turno_schema = TurnoSchema()
+turnos_schema = TurnoSchema(many=True)
 
 
 def _cliente_del_token() -> int:
@@ -42,3 +43,11 @@ def reservar():
     datos = reserva_schema.load(request.get_json(silent=True) or {})
     turno = crear_turno_service().reservar(_cliente_del_token(), token=_token_del_pedido(), **datos)
     return turno_schema.dump(turno), 201
+
+
+@turno_bp.route("", methods=["GET"])
+@jwt_required()
+def listar_mis_turnos():
+    """GET /api/v1/turnos — turnos no cancelados del cliente del token (HU-12)."""
+    turnos = crear_turno_service().listar_de_usuario(_cliente_del_token())
+    return turnos_schema.dump(turnos), 200
