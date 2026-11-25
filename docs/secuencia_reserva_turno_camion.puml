@@ -1,0 +1,140 @@
+@startuml secuencia_reserva_turno_camion
+title Reserva de turno de camión (franja completa) - HU-11
+autonumber
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor Cliente
+
+box "ms-turnos" #EEF4FF
+  participant "turno_resource" as R
+  participant "TurnoService" as S
+  participant "GrillaHoraria" as G
+  participant "Reloj" as RL
+  participant "ClienteVehiculosHTTP" as CV
+  participant "FabricaReglas" as F
+  participant "ReglaTurnoCamion" as RC
+  participant "OcupacionRepository" as OR
+  participant "TurnoRepository" as TR
+  database "turnos_db" as TDB
+end box
+
+box "ms-vehiculos" #EEFFEE
+  participant "vehiculo_resource" as VR
+  participant "VehiculoService" as VS
+  participant "VehiculoRepository" as VRep
+  database "vehiculos_db" as VDB
+end box
+
+== Pedido del cliente ==
+
+Cliente -> R : POST /api/v1/turnos\nAuthorization: Bearer <token>\n{vehiculo_id, fecha, hora: "08:00" o "16:30"}
+R -> R : @jwt_required: verifica firma y vencimiento
+break token ausente, inválido o vencido
+  R --> Cliente : 401 {error}
+end
+R -> R : ReservaSchema.load(cuerpo)
+break falta un campo o tiene formato inválido
+  R --> Cliente : 400 {errores}
+end
+R -> S : reservar(usuario_id del token, vehiculo_id,\nfecha, hora, token)
+
+== Validaciones locales (antes de consultar a otro microservicio) ==
+
+S -> G : es_dia_habil(fecha)
+G --> S : bool
+break la fecha es domingo
+  S --> R : DiaNoHabil
+  R --> Cliente : 400 {error}
+end
+S -> RL : ahora()
+RL --> S : fecha y hora de Argentina
+break fecha y hora ya pasaron
+  S --> R : FechaPasada
+  R --> Cliente : 400 {error}
+end
+
+== Comunicación con ms-vehiculos (HTTP + JSON, red lubricentro_red) ==
+
+S -> CV : obtener_vehiculo(vehiculo_id, token)
+CV -> VR : GET {VEHICULOS_URL}/api/v1/vehiculos\n(en Docker: http://ms-vehiculos:5002)\nAuthorization: Bearer <mismo token>\n(timeout 5 s)
+VR -> VR : @jwt_required con la misma JWT_SECRET_KEY
+VR -> VS : listar_de_usuario(usuario_id del token)
+VS -> VRep : listar_por_usuario(usuario_id)
+VRep -> VDB : SELECT vehiculos\nWHERE usuario_id AND deleted_at IS NULL
+VDB --> VRep : filas
+VRep --> VS : list[Vehiculo]
+VS --> VR : list[Vehiculo]
+VR --> CV : 200 [{id, patente, tipo, marca, ...}]
+break ms-vehiculos caído, sin respuesta en 5 s o con código de error
+  CV --> S : ServicioVehiculosNoDisponible
+  S --> R : ServicioVehiculosNoDisponible
+  R --> Cliente : 503 {error}
+end
+CV -> CV : busca vehiculo_id en la lista
+CV --> S : vehículo {id, patente, tipo: "camion"} o None
+break None: no existe, es de otro cliente o fue dado de baja
+  S --> R : VehiculoNoEncontrado
+  R --> Cliente : 404 {error}
+end
+
+== Regla según el tipo de vehículo ==
+
+S -> F : crear("camion")
+F --> S : ReglaTurnoCamion
+S -> RC : validar(hora, grilla)
+loop por cada Franja (MANANA, TARDE)
+  RC -> G : horarios_de_franja(franja)
+  G --> RC : horarios de la franja
+end
+RC -> RC : inicios = [08:00, 16:30]
+break la hora no es un inicio de franja (ej. 09:00)
+  RC --> S : HorarioNoPermitidoParaCamion
+  S --> R : HorarioNoPermitidoParaCamion
+  R --> Cliente : 400 {error: "Los camiones solo pueden\nreservar a las 08:00 o 16:30."}
+end
+S -> RC : horarios_a_ocupar(hora, grilla)
+RC -> G : franja_de(hora)
+G --> RC : MANANA o TARDE
+RC -> G : horarios_de_franja(franja)
+G --> RC : todos los horarios de la franja
+RC --> S : mañana: 08:00 ... 12:30 (10 horarios)\ntarde: 16:30 ... 20:00 (8 horarios)
+
+== Asignación automática de box (RN-10) ==
+
+S -> OR : listar_por_fecha(fecha)
+OR -> TDB : SELECT ocupaciones WHERE fecha
+TDB --> OR : filas
+OR --> S : ocupaciones del día
+S -> S : _box_libre(fecha, horarios):\nprimer box (1 o 2) libre en TODOS\nlos horarios de la franja (RN-07)
+break ningún box está libre durante toda la franja
+  S --> R : SinBoxDisponible
+  R --> Cliente : 409 {error}
+end
+S -> G : hora_fin(último horario)
+G --> S : 13:00 o 20:30 (cierre de la franja)
+S -> S : arma Turno (box, patente, tipo)\ncon 1 Ocupacion por horario de la franja
+
+== Guardado con control de concurrencia (RNF-02) ==
+
+S -> TR : guardar(turno)
+TR -> TDB : INSERT turno + todas sus ocupaciones\n(una sola transacción)
+break UNIQUE (fecha, hora, box) violada en algún horario:\notra reserva simultánea tomó parte de la franja
+  TDB --> TR : IntegrityError
+  TR -> TDB : ROLLBACK
+  TR --> S : CasilleroOcupado
+  S --> R : SinBoxDisponible
+  R --> Cliente : 409 {error}
+end
+TDB --> TR : COMMIT
+TR --> S : turno con id
+S --> R : turno
+R -> R : TurnoSchema.dump(turno)
+R --> Cliente : 201 {id, fecha, hora_inicio, hora_fin,\nbox, vehiculo_id, patente, tipo_vehiculo}
+
+note over Cliente, TDB
+  Mientras dure el turno, las ocupaciones bloquean ese box en toda la franja:
+  la disponibilidad (HU-09) lo muestra como no libre en cada horario.
+end note
+
+@enduml
