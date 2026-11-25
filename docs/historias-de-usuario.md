@@ -44,7 +44,7 @@ Cada historia y cada tarea técnica se carga como un issue en GitHub.
 | TT-03 | Configurar tablero de GitHub | Crear proyecto, etiquetas, milestones e issues. | Alta | Bajo | 0 | Done |
 | TT-04 | Diagrama de clases | Diagramar las clases de los 3 microservicios en PlantUML. | Alta | Alto | 0 | Done |
 | TT-05 | Base de datos en Docker | Levantar PostgreSQL con docker-compose y crear una base por microservicio. | Alta | Medio | 0 | Done |
-| TT-06 | Integración con docker-compose | Levantar los 3 microservicios y la base con un solo comando. | Alta | Alto | 4 | Todo |
-| TT-07 | Diagramas de secuencia | Diagramar en PlantUML el flujo de reserva de turno entre microservicios. | Media | Medio | 4 | Todo |
-| TT-08 | Documentación final | Completar el README con instrucciones de instalación, ejecución y pruebas. | Alta | Medio | 4 | Todo |
+| TT-06 | Integración con docker-compose | Levantar los 3 microservicios y la base con un solo comando. | Alta | Alto | 4 | Done |
+| TT-07 | Diagramas de secuencia | Diagramar en PlantUML el flujo de reserva de turno entre microservicios. | Media | Medio | 4 | Done |
+| TT-08 | Documentación final | Completar el README con instrucciones de instalación, ejecución y pruebas. | Alta | Medio | 4 | Done |
 | TT-09 | Ajustes según devolución | Aplicar las correcciones indicadas por el profesor en la revisión de avances. | Alta | Medio | 5 | Todo |
